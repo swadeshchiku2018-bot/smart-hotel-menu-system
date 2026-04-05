@@ -72,12 +72,6 @@ model OrderItem {
   portion     String   @default("Full")
 }
 
-model Settings {
-  id        String   @id @default("default")
-  hotelName String   @default("LUXE DINING")
-  updatedAt DateTime @updatedAt
-}
-
 // NextAuth Models
 model Account {
   id                 String  @id @default(cuid())
