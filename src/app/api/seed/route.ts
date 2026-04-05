@@ -25,49 +25,49 @@ export async function GET(req: Request) {
     const dishes = [
       // Starters
       { name: 'Paneer Tikka', price: 210, description: 'Clay oven roasted cottage cheese with spices', cat: 'Starters', hasPortions: true, hPrice: 120, qPrice: 70,
-        img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/34/Paneer_tikka.jpg/640px-Paneer_tikka.jpg' },
+        img: '/api/images/paneer-tikka' },
       { name: 'Chicken 65', price: 240, description: 'Spicy, deep-fried chicken tempered with curry leaves', cat: 'Starters',
-        img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/08/Chicken_65_%28Chettinad_dish%29.jpg/640px-Chicken_65_%28Chettinad_dish%29.jpg' },
+        img: '/api/images/chicken-65' },
       { name: 'Crispy Corn', price: 160, description: 'Golden fried corn with peppers and spices', cat: 'Starters',
-        img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/98/Indian-fried-corn.jpg/640px-Indian-fried-corn.jpg' },
+        img: '/api/images/crispy-corn' },
       { name: 'Hara Bhara Kabab', price: 180, description: 'Spinach and pea patties with nutty crunch', cat: 'Starters',
-        img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/65/Hara_bhara_kebab.jpg/640px-Hara_bhara_kebab.jpg' },
+        img: '/api/images/hara-bhara-kabab' },
 
       // Main Course
       { name: 'Dal Makhani', price: 240, description: 'Slow cooked black lentils with cream and butter', cat: 'Main Course', hasPortions: true, hPrice: 140, qPrice: 80,
-        img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/79/Dal_makhani_recipe.jpg/640px-Dal_makhani_recipe.jpg' },
+        img: '/api/images/dal-makhani' },
       { name: 'Paneer Butter Masala', price: 280, description: 'Cottage cheese in rich tomato gravy', cat: 'Main Course', hasPortions: true, hPrice: 160, qPrice: 90,
-        img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/57/Panneer_Butter_Masala.jpg/640px-Panneer_Butter_Masala.jpg' },
+        img: '/api/images/paneer-butter-masala' },
       { name: 'Butter Chicken', price: 320, description: 'Charcoal grilled chicken in creamy tomato sauce', cat: 'Main Course', hasPortions: true, hPrice: 190, qPrice: 110,
-        img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c8/Butter_Chicken.jpg/640px-Butter_Chicken.jpg' },
+        img: '/api/images/butter-chicken' },
       { name: 'Mix Veg Curry', price: 220, description: 'Seasonal vegetables in aromatic gravy', cat: 'Main Course',
-        img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Sabzi-mix-veg.jpg/640px-Sabzi-mix-veg.jpg' },
+        img: '/api/images/mix-veg-curry' },
 
       // Breads
       { name: 'Butter Naan', price: 45, description: 'Soft leavened bread with butter', cat: 'Breads & Naan',
-        img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cc/NaanBread.jpg/640px-NaanBread.jpg' },
+        img: '/api/images/butter-naan' },
       { name: 'Garlic Naan', price: 55, description: 'Leavened bread with garlic and herbs', cat: 'Breads & Naan',
-        img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/Garlic_Naan.jpg/640px-Garlic_Naan.jpg' },
+        img: '/api/images/garlic-naan' },
       { name: 'Tandoori Roti', price: 20, description: 'Whole wheat bread baked in clay oven', cat: 'Breads & Naan',
-        img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/TandooriRotis.jpg/640px-TandooriRotis.jpg' },
+        img: '/api/images/tandoori-roti' },
       { name: 'Butter Kulcha', price: 65, description: 'Stuffed bread with potato and spices', cat: 'Breads & Naan',
-        img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/Kulcha.jpg/640px-Kulcha.jpg' },
+        img: '/api/images/butter-kulcha' },
 
       // Desserts
       { name: 'Gulab Jamun', price: 80, description: 'Deep fried milk solids in sugar syrup (2 pcs)', cat: 'Desserts',
-        img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/20/Gulab_jamun_%28Gibraltar%2C_November_2010%29.jpg/640px-Gulab_jamun_%28Gibraltar%2C_November_2010%29.jpg' },
+        img: '/api/images/gulab-jamun' },
       { name: 'Rasmalai', price: 90, description: 'Soft cottage cheese balls in saffron milk', cat: 'Desserts',
-        img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/43/Ras-Malai.jpg/640px-Ras-Malai.jpg' },
+        img: '/api/images/rasmalai' },
       { name: 'Vanilla Ice Cream', price: 70, description: 'Premium vanilla bean ice cream', cat: 'Desserts',
-        img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/Ice_cream_with_whipped_cream%2C_chocolate_syrup%2C_and_a_wafer_%28Wouter_Hagens%29.jpg/640px-Ice_cream_with_whipped_cream%2C_chocolate_syrup%2C_and_a_wafer_%28Wouter_Hagens%29.jpg' },
+        img: '/api/images/vanilla-ice-cream' },
 
       // Beverages
       { name: 'Masala Chai', price: 30, description: 'Indian tea with ginger and cardamom', cat: 'Beverages',
-        img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/84/Masala_Chai.JPG/640px-Masala_Chai.JPG' },
+        img: '/api/images/masala-chai' },
       { name: 'Fresh Lime Soda', price: 60, description: 'Refreshing sweet and salty soda', cat: 'Beverages',
-        img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/Lime_soda.jpg/640px-Lime_soda.jpg' },
+        img: '/api/images/fresh-lime-soda' },
       { name: 'Cold Coffee', price: 110, description: 'Creamy blended coffee with chocolate', cat: 'Beverages',
-        img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/A_small_cup_of_coffee.JPG/640px-A_small_cup_of_coffee.JPG' },
+        img: '/api/images/cold-coffee' },
     ];
 
     for (const d of dishes) {
