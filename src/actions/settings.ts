@@ -1,24 +1,19 @@
 'use server';
 
-import fs from 'fs';
-import path from 'path';
-
-const settingsPath = path.join(process.cwd(), 'src', 'lib', 'settings.json');
-
-function ensureSettingsFile() {
-  if (!fs.existsSync(settingsPath)) {
-    fs.writeFileSync(settingsPath, JSON.stringify({ hotelName: 'LUXE DINING', adminUpiId: '' }));
-  }
-}
+import prisma from '@/lib/prisma';
 
 export async function getSettings() {
   try {
-    ensureSettingsFile();
-    const data = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
+    let settings = await (prisma as any).settings.findFirst();
+    if (!settings) {
+       settings = await (prisma as any).settings.create({
+         data: { hotelName: 'LUXE DINING', adminUpiId: '', loginBgUrl: '' }
+       });
+    }
     return {
-      hotelName: data.hotelName || 'LUXE DINING',
-      adminUpiId: data.adminUpiId || '',
-      loginBgUrl: data.loginBgUrl || ''
+      hotelName: settings.hotelName,
+      adminUpiId: settings.adminUpiId || '',
+      loginBgUrl: settings.loginBgUrl || ''
     };
   } catch (e) {
     return { hotelName: 'LUXE DINING', adminUpiId: '', loginBgUrl: '' };
@@ -32,12 +27,15 @@ export async function getHotelName() {
 
 export async function updateSettings(newData: { hotelName?: string, adminUpiId?: string, loginBgUrl?: string }) {
   try {
-    ensureSettingsFile();
-    const data = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
-    if (newData.hotelName !== undefined) data.hotelName = newData.hotelName;
-    if (newData.adminUpiId !== undefined) data.adminUpiId = newData.adminUpiId;
-    if (newData.loginBgUrl !== undefined) data.loginBgUrl = newData.loginBgUrl;
-    fs.writeFileSync(settingsPath, JSON.stringify(data));
+    let settings = await (prisma as any).settings.findFirst();
+    if (!settings) {
+       settings = await (prisma as any).settings.create({ data: { hotelName: 'LUXE DINING' } });
+    }
+    
+    await (prisma as any).settings.update({
+      where: { id: settings.id },
+      data: newData
+    });
     return { success: true };
   } catch (e: any) {
     return { success: false, error: e.message };
