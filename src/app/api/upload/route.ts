@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile, mkdir } from 'fs/promises';
-import path from 'path';
 
 export async function POST(req: NextRequest) {
   try {
@@ -17,26 +15,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid file type. Use JPEG, PNG, WebP or GIF.' }, { status: 400 });
     }
 
+    // 5MB limit
+    if (file.size > 5 * 1024 * 1024) {
+      return NextResponse.json({ error: 'File too large. Max 5MB.' }, { status: 400 });
+    }
+
+    // Convert to Base64 data URL — works on Vercel with no filesystem writes
     const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
+    const base64 = Buffer.from(bytes).toString('base64');
+    const dataUrl = `data:${file.type};base64,${base64}`;
 
-    // Build a unique filename: timestamp + sanitised original name
-    const ext = file.name.split('.').pop()?.toLowerCase() ?? 'jpg';
-    const safeName = file.name
-      .replace(/\.[^.]+$/, '')
-      .replace(/[^a-zA-Z0-9-_]/g, '_')
-      .slice(0, 40);
-    const fileName = `${Date.now()}_${safeName}.${ext}`;
-
-    // Ensure public/uploads directory exists
-    const uploadDir = path.join(process.cwd(), 'public', 'uploads');
-    await mkdir(uploadDir, { recursive: true });
-
-    // Write file
-    const filePath = path.join(uploadDir, fileName);
-    await writeFile(filePath, buffer);
-
-    return NextResponse.json({ url: `/uploads/${fileName}` });
+    // Return the base64 data URL as the image URL — stored directly in DB
+    return NextResponse.json({ url: dataUrl });
   } catch (err) {
     console.error('Upload error:', err);
     return NextResponse.json({ error: 'Upload failed' }, { status: 500 });
