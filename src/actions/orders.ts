@@ -15,6 +15,28 @@ export async function getOrders() {
   });
 }
 
+export async function getHistoryOrders(dateStr: string) {
+  const startOfDay = new Date(dateStr);
+  const endOfDay = new Date(dateStr);
+  endOfDay.setUTCHours(23, 59, 59, 999);
+
+  return prisma.order.findMany({
+    where: {
+      createdAt: {
+        gte: startOfDay,
+        lte: endOfDay
+      }
+    },
+    include: {
+      table: true,
+      items: {
+        include: { dish: true }
+      }
+    },
+    orderBy: { createdAt: 'desc' }
+  });
+}
+
 export async function updateOrderStatus(orderId: string, status: string) {
   await prisma.order.update({
     where: { id: orderId },

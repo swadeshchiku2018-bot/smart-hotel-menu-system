@@ -24,14 +24,16 @@ export default function OrdersClient({ initialOrders }: { initialOrders: any[] }
     'CANCELLED': 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 border-red-200 dark:border-red-800',
   };
 
+  const liveOrders = initialOrders.filter(o => ['PENDING', 'PREPARING', 'SERVED'].includes(o.status));
+
   return (
     <div className="space-y-6">
-      {initialOrders.length === 0 ? (
+      {liveOrders.length === 0 ? (
         <div className="bg-white dark:bg-slate-800 p-12 rounded-xl border border-slate-200 dark:border-slate-700 text-center">
-          <p className="text-slate-500 text-lg">No orders found.</p>
+          <p className="text-slate-500 text-lg">No active live orders.</p>
         </div>
       ) : (
-        initialOrders.map(order => (
+        liveOrders.map(order => (
           <div key={order.id} className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col md:flex-row">
             
             {/* Order Info */}

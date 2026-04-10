@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, UtensilsCrossed, QrCode, ClipboardList, Settings, BarChart3, Banknote, Users, LogOut, Menu, X } from 'lucide-react';
+import { LayoutDashboard, UtensilsCrossed, QrCode, ClipboardList, Settings, BarChart3, Banknote, Users, LogOut, Menu, X, Archive } from 'lucide-react';
 
 export default function AdminLayoutClient({ children }: { children: React.ReactNode }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -12,6 +12,7 @@ export default function AdminLayoutClient({ children }: { children: React.ReactN
   const links = [
     { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/admin/orders', label: 'Live Orders', icon: ClipboardList },
+    { href: '/admin/history', label: 'Order History', icon: Archive },
     { href: '/admin/menu', label: 'Menu Dishes', icon: UtensilsCrossed },
     { href: '/admin/tables', label: 'Tables & QR', icon: QrCode },
     { href: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
