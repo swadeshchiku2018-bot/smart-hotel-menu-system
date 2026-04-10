@@ -104,6 +104,7 @@ export default function CustomerMenuClient({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(false);
   const [mobileNumber, setMobileNumber] = useState('');
+  const [chefInstruction, setChefInstruction] = useState('');
 
   // ── Derived ──────────────────────────────────────────────────────────────
   const cartEntries = Object.entries(cart);
@@ -176,7 +177,7 @@ export default function CustomerMenuClient({
         return;
       }
 
-      const result = await createOrder(table.id, items, mobileNumber);
+      const result = await createOrder(table.id, items, mobileNumber, chefInstruction);
       if (result?.success) {
         setCart({});
         setIsCartOpen(false);
@@ -234,7 +235,7 @@ export default function CustomerMenuClient({
     <div className="pb-32 min-h-screen bg-slate-50 dark:bg-slate-950 font-sans selection:bg-primary/30 text-slate-800 dark:text-slate-100">
 
       {/* Hero Header */}
-      <div className="relative h-80 md:h-[400px] w-full overflow-hidden rounded-b-[3rem] shadow-2xl">
+      <div className="relative h-64 md:h-[400px] w-full overflow-hidden rounded-b-[3rem] shadow-2xl">
         <div className="absolute inset-0 bg-slate-900">
           <img src="/api/images/hero" className="w-full h-full object-cover opacity-60 mix-blend-overlay" alt="Restaurant Interior" />
         </div>
@@ -553,6 +554,18 @@ export default function CustomerMenuClient({
                       value={mobileNumber}
                       onChange={e => setMobileNumber(e.target.value)}
                       className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 group-hover:border-primary transition font-mono"
+                    />
+                  </div>
+                  
+                  <div className="mb-6">
+                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                       Instructions for Chef (Optional)
+                    </label>
+                    <textarea 
+                      placeholder="e.g. Less spicy, no onions, etc." 
+                      value={chefInstruction}
+                      onChange={e => setChefInstruction(e.target.value)}
+                      className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 group-hover:border-primary transition font-sans resize-none h-20"
                     />
                   </div>
                   

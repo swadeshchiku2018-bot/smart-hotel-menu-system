@@ -10,7 +10,7 @@ export default function SettingsClient({ initialHotelName, initialUpiId }: { ini
   const [adminUpiId, setAdminUpiId] = useState(initialUpiId);
   const [isSaving, setIsSaving] = useState(false);
   const [isWiping, setIsWiping] = useState(false);
-  
+
   // Credentials
   const [credUsername, setCredUsername] = useState('admin');
   const [credPassword, setCredPassword] = useState('');
@@ -18,38 +18,52 @@ export default function SettingsClient({ initialHotelName, initialUpiId }: { ini
   const [isUpdatingCreds, setIsUpdatingCreds] = useState(false);
 
   // Background
-  const [bgFile, setBgFile] = useState<string | null>(null);
+  const [bgFilePreview, setBgFilePreview] = useState<string | null>(null);
+  const [bgFileObject, setBgFileObject] = useState<File | null>(null);
 
   const router = useRouter();
 
   const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
-    const data: any = { hotelName, adminUpiId };
-    if (bgFile) data.loginBgUrl = bgFile;
-    
-    await updateSettings(data);
-    setIsSaving(false);
-    alert('Settings Saved!');
-    router.refresh();
+    try {
+      const data: any = { hotelName, adminUpiId };
+      
+      if (bgFileObject) {
+        const formData = new FormData();
+        formData.append('image', bgFileObject);
+        const res = await fetch('/api/upload', { method: 'POST', body: formData });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error || 'Failed to upload background image');
+        }
+        const parsed = await res.json();
+        data.loginBgUrl = parsed.url;
+      }
+
+      const resAction = await updateSettings(data);
+      if (!resAction.success) throw new Error(resAction.error || 'Database save failed');
+      
+      alert('Settings Saved!');
+      router.refresh();
+    } catch (err: any) {
+      alert('Error: ' + (err.message || 'Unknown error occurred while saving.'));
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleBgUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      if (ev.target?.result) {
-        setBgFile(ev.target.result as string);
-      }
-    };
-    reader.readAsDataURL(file);
+    setBgFileObject(file);
+    setBgFilePreview(URL.createObjectURL(file));
   };
 
   const wipeData = async () => {
     if (!confirm('EXTREME DANGER: This will permanently erase ALL Order and Analytics history from the database! Are you absolutely sure?')) return;
     if (!confirm('Are you REALLY sure? This cannot be undone.')) return;
-    
+
     setIsWiping(true);
     const res = await fetch('/api/admin/wipe', { method: 'POST' });
     setIsWiping(false);
@@ -64,7 +78,7 @@ export default function SettingsClient({ initialHotelName, initialUpiId }: { ini
   const handleUpdateCreds = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentPassword) return alert("Enter your current password to authorize this action.");
-    
+
     setIsUpdatingCreds(true);
     const res = await fetch('/api/admin/update-credentials', {
       method: 'POST',
@@ -88,7 +102,7 @@ export default function SettingsClient({ initialHotelName, initialUpiId }: { ini
         <h2 className="text-2xl font-bold mb-6 text-slate-800 dark:text-white border-b border-slate-100 dark:border-slate-700 pb-4">
           Brand & Payments Configuration
         </h2>
-        
+
         <form onSubmit={handleSaveSettings} className="space-y-6">
           <div>
             <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
@@ -121,7 +135,7 @@ export default function SettingsClient({ initialHotelName, initialUpiId }: { ini
 
           <div>
             <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-2">
-              <ImageIcon className="w-4 h-4"/> Login Screen Background
+              <ImageIcon className="w-4 h-4" /> Login Screen Background
             </label>
             <input
               type="file"
@@ -130,7 +144,7 @@ export default function SettingsClient({ initialHotelName, initialUpiId }: { ini
               className="bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl w-full p-2"
             />
             <p className="text-xs text-slate-500 mt-2 font-medium">Select a local image from your device to display behind the login portal window.</p>
-            {bgFile && <img src={bgFile} alt="Preview" className="h-24 mt-4 rounded-xl shadow-lg border border-slate-200 object-cover" />}
+            {bgFilePreview && <img src={bgFilePreview} alt="Preview" className="h-24 mt-4 rounded-xl shadow-lg border border-slate-200 object-cover" />}
           </div>
 
           <button
@@ -146,45 +160,45 @@ export default function SettingsClient({ initialHotelName, initialUpiId }: { ini
 
       {/* Security Module */}
       <div className="bg-white dark:bg-slate-800 p-8 rounded-[2rem] border border-slate-200 dark:border-slate-700 shadow-xl">
-         <h2 className="text-xl font-bold mb-6 text-slate-800 dark:text-white flex items-center gap-2">
-            <Key className="w-5 h-5 text-amber-500"/> Admin Identity & Password
-         </h2>
-         <form onSubmit={handleUpdateCreds} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">New Username</label>
-                <input required value={credUsername} onChange={e => setCredUsername(e.target.value)} className="w-full p-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-transparent font-bold" />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">New Password</label>
-                <input required type="password" placeholder="At least 6 chars" value={credPassword} onChange={e => setCredPassword(e.target.value)} className="w-full p-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-transparent font-bold" />
-              </div>
+        <h2 className="text-xl font-bold mb-6 text-slate-800 dark:text-white flex items-center gap-2">
+          <Key className="w-5 h-5 text-amber-500" /> Admin Identity & Password
+        </h2>
+        <form onSubmit={handleUpdateCreds} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">New Username</label>
+              <input required value={credUsername} onChange={e => setCredUsername(e.target.value)} className="w-full p-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-transparent font-bold" />
             </div>
-            <div className="pt-4 border-t border-slate-100 dark:border-slate-700">
-               <label className="block text-xs font-black uppercase text-amber-600 mb-2">Current Admin Password to Authorize</label>
-               <div className="flex gap-4">
-                 <input required type="password" placeholder="Verify it's you" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} className="flex-1 p-3 rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-900/10 focus:ring-amber-500 focus:border-amber-500 font-bold" />
-                 <button disabled={isUpdatingCreds} type="submit" className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-6 rounded-lg font-bold">Update Keys</button>
-               </div>
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">New Password</label>
+              <input required type="password" placeholder="At least 6 chars" value={credPassword} onChange={e => setCredPassword(e.target.value)} className="w-full p-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-transparent font-bold" />
             </div>
-         </form>
+          </div>
+          <div className="pt-4 border-t border-slate-100 dark:border-slate-700">
+            <label className="block text-xs font-black uppercase text-amber-600 mb-2">Current Admin Password to Authorize</label>
+            <div className="flex gap-4">
+              <input required type="password" placeholder="Verify it's you" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} className="flex-1 p-3 rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-900/10 focus:ring-amber-500 focus:border-amber-500 font-bold" />
+              <button disabled={isUpdatingCreds} type="submit" className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-6 rounded-lg font-bold">Update Keys</button>
+            </div>
+          </div>
+        </form>
       </div>
 
       {/* Extreme Danger Zone */}
       <div className="bg-red-50 dark:bg-red-900/10 p-8 rounded-[2rem] border border-red-200 dark:border-red-900 align-center">
-         <h2 className="text-xl font-bold mb-2 text-red-600 dark:text-red-400 flex items-center gap-2">
-           <AlertTriangle className="w-5 h-5" /> Factory Data Wipe
-         </h2>
-         <p className="text-red-500 font-medium mb-6 text-sm">
-           This action will permanently cascade-delete all processed Orders, live unfulfilled orders, and Analytics revenue records across the entire business. Menu Categories and Dishes will <strong>NOT</strong> be affected.
-         </p>
-         <button 
-           onClick={wipeData}
-           disabled={isWiping}
-           className="px-6 py-3 bg-red-600 text-white font-bold rounded-xl shadow-lg shadow-red-600/30 hover:bg-red-700 disabled:opacity-50"
-         >
-           {isWiping ? 'Wiping Database...' : 'Erase All System Data'}
-         </button>
+        <h2 className="text-xl font-bold mb-2 text-red-600 dark:text-red-400 flex items-center gap-2">
+          <AlertTriangle className="w-5 h-5" /> Factory Data Wipe
+        </h2>
+        <p className="text-red-500 font-medium mb-6 text-sm">
+          This action will permanently cascade-delete all processed Orders, live unfulfilled orders, and Analytics revenue records across the entire business. Menu Categories and Dishes will <strong>NOT</strong> be affected.
+        </p>
+        <button
+          onClick={wipeData}
+          disabled={isWiping}
+          className="px-6 py-3 bg-red-600 text-white font-bold rounded-xl shadow-lg shadow-red-600/30 hover:bg-red-700 disabled:opacity-50"
+        >
+          {isWiping ? 'Wiping Database...' : 'Erase All System Data'}
+        </button>
       </div>
     </div>
   );

@@ -104,6 +104,12 @@ export default function WaiterDashboardClient({ orders, settings }: { orders: an
                     </li>
                   ))}
                 </ul>
+                {order.chefInstruction && (
+                  <div className="mt-3 pt-3 border-t border-red-100 dark:border-red-900/50">
+                    <p className="text-[10px] font-black uppercase text-red-500 mb-0.5">Chef Instruction</p>
+                    <p className="text-sm font-medium text-red-700 dark:text-red-400">"{order.chefInstruction}"</p>
+                  </div>
+                )}
               </div>
 
               <div className="mt-auto grid grid-cols-2 gap-2">

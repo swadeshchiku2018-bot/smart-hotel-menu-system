@@ -7,6 +7,7 @@ import { ShoppingBag, Minus, Plus, X, Layers, Phone, MapPin, ArrowRight } from '
 export default function WaiterCreateOrderClient({ dishes, tables, defaultTable = '', defaultMobile = '' }: { dishes: any[], tables: any[], defaultTable?: string, defaultMobile?: string }) {
   const [selectedTable, setSelectedTable] = useState(defaultTable);
   const [mobileNumber, setMobileNumber] = useState(defaultMobile);
+  const [chefInstruction, setChefInstruction] = useState('');
   const [cart, setCart] = useState<{ [dishId: string]: { quantity: number, portion?: string } }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -51,11 +52,12 @@ export default function WaiterCreateOrderClient({ dishes, tables, defaultTable =
         return { dishId, quantity, price: getPortionPrice(dish, portion), portion };
       });
 
-      const res = await createOrder(selectedTable, items, mobileNumber);
+      const res = await createOrder(selectedTable, items, mobileNumber, chefInstruction);
       if (res?.success) {
         alert('Order placed successfully!');
         setCart({});
         setMobileNumber('');
+        setChefInstruction('');
         setSelectedTable('');
       } else {
         alert('Failed to place order.');
@@ -118,6 +120,16 @@ export default function WaiterCreateOrderClient({ dishes, tables, defaultTable =
                value={mobileNumber}
                onChange={e => setMobileNumber(e.target.value)}
                className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg py-2 px-3 focus:outline-none focus:border-primary font-bold text-sm font-mono tracking-wider"
+             />
+          </div>
+
+          <div>
+             <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1 mb-1">Chef Instructions</label>
+             <textarea 
+               placeholder="Optional instructions..."
+               value={chefInstruction}
+               onChange={e => setChefInstruction(e.target.value)}
+               className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg py-2 px-3 focus:outline-none focus:border-primary text-sm resize-none h-16"
              />
           </div>
         </div>

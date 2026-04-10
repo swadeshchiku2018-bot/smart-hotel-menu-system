@@ -24,7 +24,7 @@ export async function updateOrderStatus(orderId: string, status: string) {
   revalidatePath('/admin');
 }
 
-export async function createOrder(tableId: string, items: {dishId: string, quantity: number, price: number, portion?: string}[], customerPhone?: string) {
+export async function createOrder(tableId: string, items: {dishId: string, quantity: number, price: number, portion?: string}[], customerPhone?: string, chefInstruction?: string) {
   try {
     const totalAmount = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     
@@ -32,6 +32,7 @@ export async function createOrder(tableId: string, items: {dishId: string, quant
       data: {
         tableId,
         customerPhone,
+        chefInstruction,
         totalAmount,
         items: {
           create: items.map(item => ({

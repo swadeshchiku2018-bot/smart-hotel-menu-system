@@ -75,6 +75,13 @@ export default function OrdersClient({ initialOrders }: { initialOrders: any[] }
                 ))}
               </ul>
 
+              {order.chefInstruction && (
+                <div className="mb-6 bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-900 rounded-lg p-4">
+                  <p className="text-xs font-black uppercase text-red-600 dark:text-red-400 mb-1 tracking-wider">Instructions for Chef</p>
+                  <p className="text-red-900 dark:text-red-300 font-medium text-sm">"{order.chefInstruction}"</p>
+                </div>
+              )}
+
               {/* Actions */}
               <div className="flex flex-wrap gap-2 mt-auto pt-4 border-t border-slate-100 dark:border-slate-700">
                 {order.status === 'PENDING' && (

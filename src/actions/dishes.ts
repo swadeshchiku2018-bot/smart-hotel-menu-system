@@ -4,9 +4,18 @@ import prisma from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 
 export async function getDishes() {
-  return prisma.dish.findMany({
+  const dishes = await prisma.dish.findMany({
     include: { category: true },
     orderBy: { categoryId: 'asc' }
+  });
+  
+  // Strip huge base64 data URLs to prevent JSON payload bloat on the frontend.
+  // We use our local API endpoint to lazily serve the images.
+  return dishes.map((dish: any) => {
+    if (dish.imageUrl && dish.imageUrl.startsWith('data:image/')) {
+      return { ...dish, imageUrl: `/api/images/dish/${dish.id}` };
+    }
+    return dish;
   });
 }
 
