@@ -13,7 +13,9 @@ export async function getSettings() {
     return {
       hotelName: settings.hotelName,
       adminUpiId: settings.adminUpiId || '',
-      loginBgUrl: settings.loginBgUrl || ''
+      loginBgUrl: settings.loginBgUrl && settings.loginBgUrl.startsWith('data:') 
+        ? '/api/images/bg' 
+        : (settings.loginBgUrl || '')
     };
   } catch (e) {
     return { hotelName: 'LUXE DINING', adminUpiId: '', loginBgUrl: '' };
