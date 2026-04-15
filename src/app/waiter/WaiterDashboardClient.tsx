@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { updateOrderStatus } from '@/actions/orders';
 import { User, Phone, CheckCircle, Receipt, Utensils, AlertCircle, PlusCircle } from 'lucide-react';
@@ -12,10 +12,34 @@ export default function WaiterDashboardClient({ orders, settings }: { orders: an
   const [selectedName, setSelectedName] = useState<string | null>(null);
   const [localOrders, setLocalOrders] = useState(orders);
   const router = useRouter();
+  const prevOrderIds = useRef<Set<string>>(new Set(orders.map(o => o.id)));
 
-  // Sync server prop state natively when polling happens
+  // Request Notification permission on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+  }, []);
+
+  // Sync server prop state natively when polling happens and trigger notifications
   useEffect(() => {
     setLocalOrders(orders);
+
+    const currentIds = new Set(orders.map(o => o.id));
+    const newOrders = orders.filter(o => !prevOrderIds.current.has(o.id));
+
+    if (newOrders.length > 0 && typeof document !== 'undefined' && document.visibilityState === 'hidden') {
+      if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+        newOrders.forEach(no => {
+          if (no.status === 'PENDING') {
+            new Notification(`New Order - Table ${no.table?.tableNumber}`, {
+              body: `${no.customerName || 'Walk-in'} just placed a new order.`,
+            });
+          }
+        });
+      }
+    }
+    prevOrderIds.current = currentIds;
   }, [orders]);
 
   // Auto-refresh orders every 10 seconds for real-time sync
