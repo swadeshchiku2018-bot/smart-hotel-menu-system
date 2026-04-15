@@ -20,6 +20,8 @@ model Table {
   tableNumber Int      @unique
   qrCodeUrl   String?
   orders      Order[]
+  waiterId    String?
+  waiter      User?    @relation("WaiterTables", fields: [waiterId], references: [id])
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
@@ -110,6 +112,7 @@ model User {
   role           String    @default("CUSTOMER") // ADMIN, WAITER, CUSTOMER
   accounts       Account[]
   sessions       Session[]
+  tables         Table[]   @relation("WaiterTables")
 }
 
 model VerificationToken {

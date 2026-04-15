@@ -2,12 +2,14 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Edit2, Save, X } from 'lucide-react';
 
-export default function AccountsClient({ users }: { users: any[] }) {
+export default function AccountsClient({ users, tables = [] }: { users: any[], tables?: any[] }) {
   const [waiterName, setWaiterName] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [editingWaiter, setEditingWaiter] = useState<string | null>(null);
+  const [selectedTables, setSelectedTables] = useState<string[]>([]);
   const router = useRouter();
 
   const handleCreateWaiter = async (e: React.FormEvent) => {
@@ -39,8 +41,38 @@ export default function AccountsClient({ users }: { users: any[] }) {
     router.refresh();
   };
 
+  const handleEditTables = (userId: string, currentTables: any[]) => {
+    setEditingWaiter(userId);
+    setSelectedTables(currentTables.map((t: any) => t.id));
+  };
+
+  const handleSaveTables = async (userId: string) => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/admin/waiters/assign', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ waiterId: userId, tableIds: selectedTables })
+      });
+      if (res.ok) {
+        setEditingWaiter(null);
+        router.refresh();
+      } else {
+        alert('Failed to assign tables.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const toggleTable = (tableId: string) => {
+    setSelectedTables(prev => 
+      prev.includes(tableId) ? prev.filter(id => id !== tableId) : [...prev, tableId]
+    );
+  };
+
   return (
-    <div className="max-w-4xl space-y-8">
+    <div className="max-w-5xl space-y-8">
       <div className="bg-white dark:bg-slate-800 p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
         <h2 className="text-xl font-bold mb-6 text-slate-800 dark:text-white">Create New Waiter</h2>
         <form onSubmit={handleCreateWaiter} className="flex gap-4 items-end flex-wrap">
@@ -83,27 +115,78 @@ export default function AccountsClient({ users }: { users: any[] }) {
         <table className="w-full text-left text-sm whitespace-nowrap">
           <thead className="bg-slate-50 dark:bg-slate-900/50 text-slate-500 border-b border-slate-100 dark:border-slate-700">
             <tr>
-              <th className="px-6 py-3 font-semibold">Username / Email</th>
-              <th className="px-6 py-3 font-semibold">Role</th>
+              <th className="px-6 py-3 font-semibold w-1/4">Username / Email</th>
+              <th className="px-6 py-3 font-semibold w-1/4">Role</th>
+              <th className="px-6 py-3 font-semibold w-1/3">Assigned Tables</th>
               <th className="px-6 py-3 font-semibold text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
             {users.map(u => (
               <tr key={u.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition">
-                <td className="px-6 py-4 font-medium text-slate-800 dark:text-slate-200">
+                <td className="px-6 py-4 font-medium text-slate-800 dark:text-slate-200 align-top">
                   {u.name || u.email || 'Unknown'}
                 </td>
-                <td className="px-6 py-4">
+                <td className="px-6 py-4 align-top">
                   <span className={`px-2 py-1 rounded-md text-xs font-bold ${u.role === 'ADMIN' ? 'bg-primary/20 text-primary' : 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300'}`}>
                     {u.role}
                   </span>
                 </td>
-                <td className="px-6 py-4 text-right">
+                <td className="px-6 py-4 align-top whitespace-normal">
+                  {u.role === 'ADMIN' ? (
+                     <span className="text-slate-400 italic">Has access to all tables</span>
+                  ) : editingWaiter === u.id ? (
+                     <div className="flex flex-wrap gap-2">
+                       {tables.map(t => (
+                         <label key={t.id} className="flex items-center gap-1.5 p-2 border border-slate-200 dark:border-slate-700 rounded-lg cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition">
+                           <input 
+                             type="checkbox" 
+                             checked={selectedTables.includes(t.id)} 
+                             onChange={() => toggleTable(t.id)}
+                             className="w-4 h-4 text-primary rounded focus:ring-primary"
+                           />
+                           <span className="font-medium text-sm">Table {t.tableNumber}</span>
+                         </label>
+                       ))}
+                     </div>
+                  ) : (
+                    <div className="flex flex-wrap gap-1">
+                      {u.tables && u.tables.length > 0 ? (
+                        u.tables.map((t: any) => (
+                          <span key={t.id} className="bg-primary/10 text-primary px-2 py-1 rounded-md text-xs font-bold border border-primary/20">
+                            T-{t.tableNumber}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-slate-500 italic text-xs">No tables assigned</span>
+                      )}
+                    </div>
+                  )}
+                </td>
+                <td className="px-6 py-4 text-right align-top flex justify-end gap-2">
                   {u.role !== 'ADMIN' && (
-                    <button onClick={() => handleDeleteWaiter(u.id)} className="text-red-500 hover:text-red-400 p-2">
-                       <Trash2 className="w-4 h-4" />
-                    </button>
+                    <>
+                      {editingWaiter === u.id ? (
+                        <>
+                          <button onClick={() => setEditingWaiter(null)} disabled={loading} className="p-2 text-slate-500 hover:text-slate-700 bg-slate-100 dark:bg-slate-700 rounded-lg transition disabled:opacity-50">
+                            <X className="w-4 h-4" />
+                          </button>
+                          <button onClick={() => handleSaveTables(u.id)} disabled={loading} className="px-3 py-2 text-white bg-primary hover:bg-opacity-90 rounded-lg font-bold text-xs flex items-center gap-1 transition disabled:opacity-50">
+                             <Save className="w-4 h-4" /> Save
+                          </button>
+                        </>
+                      ) : (
+                        <button onClick={() => handleEditTables(u.id, u.tables || [])} className="p-2 text-blue-500 hover:text-blue-600 bg-blue-50 dark:bg-blue-900/20 rounded-lg transition">
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                      )}
+                      
+                      {editingWaiter !== u.id && (
+                        <button onClick={() => handleDeleteWaiter(u.id)} className="p-2 text-red-500 hover:text-red-600 bg-red-50 dark:bg-red-900/20 rounded-lg transition">
+                           <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </>
                   )}
                 </td>
               </tr>
