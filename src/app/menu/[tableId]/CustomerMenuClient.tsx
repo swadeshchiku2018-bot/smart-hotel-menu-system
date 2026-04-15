@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { createOrder } from '@/actions/orders';
-import { ShoppingBag, Minus, Plus, X, Utensils, ArrowRight, Flame, Layers } from 'lucide-react';
+import { ShoppingBag, Minus, Plus, X, Utensils, ArrowRight, Flame, Layers, User } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 // Fallback images for seeded dishes that don't have an imageUrl in DB yet
@@ -103,7 +103,7 @@ export default function CustomerMenuClient({
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(false);
-  const [mobileNumber, setMobileNumber] = useState('');
+  const [customerName, setCustomerName] = useState('');
   const [chefInstruction, setChefInstruction] = useState('');
 
   // ── Derived ──────────────────────────────────────────────────────────────
@@ -156,8 +156,8 @@ export default function CustomerMenuClient({
   // ── Place Order ───────────────────────────────────────────────────────────
   const handlePlaceOrder = async () => {
     if (cartTotalItems === 0) return;
-    if (!mobileNumber || mobileNumber.length < 10) {
-      alert("Please enter a valid 10-digit mobile number to track our bill.");
+    if (!customerName || customerName.trim().length === 0) {
+      alert("Please enter your name to track your order and bill.");
       return;
     }
     setIsSubmitting(true);
@@ -177,7 +177,7 @@ export default function CustomerMenuClient({
         return;
       }
 
-      const result = await createOrder(table.id, items, mobileNumber, chefInstruction);
+      const result = await createOrder(table.id, items, customerName.trim(), chefInstruction);
       if (result?.success) {
         setCart({});
         setIsCartOpen(false);
@@ -545,15 +545,15 @@ export default function CustomerMenuClient({
               {cartTotalItems > 0 && (
                 <div className="p-8 pt-6 border-t border-slate-100 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-900/50 backdrop-blur-xl">
                   <div className="mb-6">
-                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
-                       Your Mobile Number (For Billing)
+                    <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-1.5">
+                       <User className="w-4 h-4" /> Guest Name (For Billing)
                     </label>
                     <input 
-                      type="tel" 
-                      placeholder="e.g. 9876543210" 
-                      value={mobileNumber}
-                      onChange={e => setMobileNumber(e.target.value)}
-                      className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 group-hover:border-primary transition font-mono"
+                      type="text" 
+                      placeholder="e.g. John Doe" 
+                      value={customerName}
+                      onChange={e => setCustomerName(e.target.value)}
+                      className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 group-hover:border-primary transition font-sans tracking-wide"
                     />
                   </div>
                   

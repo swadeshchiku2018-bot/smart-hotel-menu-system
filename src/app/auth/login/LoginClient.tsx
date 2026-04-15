@@ -26,11 +26,10 @@ export default function LoginClient({ hotelName, loginBg }: { hotelName: string,
     } else {
       const session = await getSession();
       if ((session?.user as any)?.role === 'WAITER') {
-         router.push('/waiter');
+         window.location.href = '/waiter';
       } else {
-         router.push('/admin');
+         window.location.href = '/admin';
       }
-      router.refresh();
     }
   };
 

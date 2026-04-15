@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Calendar, DollarSign, ArrowUpRight, ArrowDownRight, TrendingUp, XCircle, CheckCircle } from 'lucide-react';
+import { Calendar, DollarSign, ArrowUpRight, ArrowDownRight, TrendingUp, XCircle, CheckCircle, Download } from 'lucide-react';
 
 export default function AnalyticsClient({ initialOrders }: { initialOrders: any[] }) {
   const [filterMode, setFilterMode] = useState<'ALL' | 'MONTH' | 'DAY'>('ALL');
@@ -28,6 +28,34 @@ export default function AnalyticsClient({ initialOrders }: { initialOrders: any[
   const completedOrders = filteredOrders.filter(o => o.status === 'COMPLETED');
   const cancelledOrders = filteredOrders.filter(o => o.status === 'CANCELLED');
   const totalRevenue = completedOrders.reduce((sum, o) => sum + o.totalAmount, 0);
+
+  const exportToCSV = () => {
+    if (filteredOrders.length === 0) return alert("No data to export.");
+    const headers = ['Date', 'Time', 'Order ID', 'Table Number', 'Status', 'Total Amount', 'Items Count'];
+    const rows = filteredOrders.map(order => [
+      new Date(order.createdAt).toLocaleDateString(),
+      new Date(order.createdAt).toLocaleTimeString(),
+      order.id,
+      order.table?.tableNumber || 'N/A',
+      order.status,
+      order.totalAmount,
+      order.items?.length || 0
+    ]);
+    
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+    ].join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `analytics_export_${filterMode}_${new Date().getTime()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   return (
     <div className="space-y-6">
@@ -120,7 +148,15 @@ export default function AnalyticsClient({ initialOrders }: { initialOrders: any[
             <TrendingUp className="w-5 h-5 text-primary" />
             Transaction History
           </h3>
-          <span className="text-sm text-slate-500">{filteredOrders.length} total</span>
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-slate-500">{filteredOrders.length} total</span>
+            <button 
+              onClick={exportToCSV}
+              className="flex items-center gap-1.5 text-xs font-bold bg-primary text-white px-3 py-1.5 rounded-lg shadow-sm hover:bg-opacity-90 transition active:scale-95"
+            >
+               <Download className="w-3.5 h-3.5" /> Export Excel
+            </button>
+          </div>
         </div>
         
         {filteredOrders.length === 0 ? (

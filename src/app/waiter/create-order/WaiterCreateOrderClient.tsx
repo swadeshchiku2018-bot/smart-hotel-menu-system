@@ -6,10 +6,12 @@ import { ShoppingBag, Minus, Plus, X, Layers, Phone, MapPin, ArrowRight } from '
 
 export default function WaiterCreateOrderClient({ dishes, tables, defaultTable = '', defaultMobile = '' }: { dishes: any[], tables: any[], defaultTable?: string, defaultMobile?: string }) {
   const [selectedTable, setSelectedTable] = useState(defaultTable);
-  const [mobileNumber, setMobileNumber] = useState(defaultMobile);
+  const [customerName, setCustomerName] = useState(defaultMobile);
   const [chefInstruction, setChefInstruction] = useState('');
   const [cart, setCart] = useState<{ [dishId: string]: { quantity: number, portion?: string } }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [activeCategory, setActiveCategory] = useState<string>('All');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const cartEntries = Object.entries(cart);
   const cartTotalItems = cartEntries.reduce((a, [, v]) => a + v.quantity, 0);
@@ -42,7 +44,7 @@ export default function WaiterCreateOrderClient({ dishes, tables, defaultTable =
 
   const handlePlaceOrder = async () => {
     if (!selectedTable) return alert('Please select a table.');
-    if (!mobileNumber || mobileNumber.length < 10) return alert('Please enter a valid mobile number.');
+    if (!customerName || customerName.trim() === '') return alert('Please enter a customer name.');
     if (cartTotalItems === 0) return alert('Cart is empty.');
 
     setIsSubmitting(true);
@@ -52,11 +54,11 @@ export default function WaiterCreateOrderClient({ dishes, tables, defaultTable =
         return { dishId, quantity, price: getPortionPrice(dish, portion), portion };
       });
 
-      const res = await createOrder(selectedTable, items, mobileNumber, chefInstruction);
+      const res = await createOrder(selectedTable, items, customerName.trim(), chefInstruction);
       if (res?.success) {
         alert('Order placed successfully!');
         setCart({});
-        setMobileNumber('');
+        setCustomerName('');
         setChefInstruction('');
         setSelectedTable('');
       } else {
@@ -71,12 +73,45 @@ export default function WaiterCreateOrderClient({ dishes, tables, defaultTable =
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
       {/* Menu / Items Section */}
       <div className="lg:col-span-2 space-y-6">
-        <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2 mb-4">
-          <ShoppingBag className="w-5 h-5 text-primary" /> Point of Sale Menu
-        </h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+            <ShoppingBag className="w-5 h-5 text-primary" /> Point of Sale Menu
+          </h2>
+          <div className="relative">
+            <input 
+              type="text" 
+              placeholder="Search dishes..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="pl-4 pr-4 py-2 border border-slate-300 dark:border-slate-600 rounded-full bg-white dark:bg-slate-900 focus:outline-none focus:border-primary text-sm"
+            />
+          </div>
+        </div>
         
+        {/* Category Nav */}
+        <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+          <button 
+            onClick={() => setActiveCategory('All')}
+            className={`px-4 py-2 rounded-full whitespace-nowrap text-sm font-bold transition ${activeCategory === 'All' ? 'bg-primary text-white' : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-700'}`}
+          >
+            All
+          </button>
+          {Array.from(new Set(dishes.map(d => d.category?.name || 'Uncategorized'))).map(catName => (
+            <button 
+              key={catName}
+              onClick={() => setActiveCategory(catName as string)}
+              className={`px-4 py-2 rounded-full whitespace-nowrap text-sm font-bold transition ${activeCategory === catName ? 'bg-primary text-white' : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-700'}`}
+            >
+              {catName as string}
+            </button>
+          ))}
+        </div>
+
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {dishes.map(dish => (
+          {dishes
+            .filter(d => activeCategory === 'All' || (d.category?.name || 'Uncategorized') === activeCategory)
+            .filter(d => d.name.toLowerCase().includes(searchQuery.toLowerCase()))
+            .map(dish => (
             <div key={dish.id} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 rounded-2xl flex flex-col items-center text-center hover:border-primary/50 cursor-pointer transition"
                  onClick={() => updateQty(dish, 1)}
             >
@@ -113,13 +148,13 @@ export default function WaiterCreateOrderClient({ dishes, tables, defaultTable =
           </div>
 
           <div>
-             <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1 mb-1"><Phone className="w-3 h-3"/> Customer Mobile</label>
+             <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1 mb-1"><Layers className="w-3 h-3"/> Customer Name</label>
              <input 
-               type="tel"
-               placeholder="10-digit number"
-               value={mobileNumber}
-               onChange={e => setMobileNumber(e.target.value)}
-               className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg py-2 px-3 focus:outline-none focus:border-primary font-bold text-sm font-mono tracking-wider"
+               type="text"
+               placeholder="Customer Name"
+               value={customerName}
+               onChange={e => setCustomerName(e.target.value)}
+               className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg py-2 px-3 focus:outline-none focus:border-primary font-bold text-sm tracking-wider"
              />
           </div>
 

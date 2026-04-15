@@ -63,6 +63,12 @@ export default function SettingsClient({ initialHotelName, initialUpiId }: { ini
   const wipeData = async () => {
     if (!confirm('EXTREME DANGER: This will permanently erase ALL Order and Analytics history from the database! Are you absolutely sure?')) return;
     if (!confirm('Are you REALLY sure? This cannot be undone.')) return;
+    
+    const pwd = prompt('Enter admin password to proceed:');
+    if (pwd !== 'Jitt7rry') {
+      alert('Incorrect password. Action cancelled.');
+      return;
+    }
 
     setIsWiping(true);
     const res = await fetch('/api/admin/wipe', { method: 'POST' });

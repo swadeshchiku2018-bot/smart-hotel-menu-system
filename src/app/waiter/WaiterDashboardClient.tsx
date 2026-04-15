@@ -3,13 +3,13 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { updateOrderStatus } from '@/actions/orders';
-import { Phone, CheckCircle, Receipt, Utensils, AlertCircle, PlusCircle } from 'lucide-react';
+import { User, Phone, CheckCircle, Receipt, Utensils, AlertCircle, PlusCircle } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import Link from 'next/link';
 
 export default function WaiterDashboardClient({ orders, settings }: { orders: any[], settings: any }) {
   const [activeTab, setActiveTab] = useState<'ORDERS' | 'BILLS'>('ORDERS');
-  const [selectedMobile, setSelectedMobile] = useState<string | null>(null);
+  const [selectedName, setSelectedName] = useState<string | null>(null);
   const router = useRouter();
 
   // Auto-refresh orders every 10 seconds for real-time sync
@@ -24,10 +24,10 @@ export default function WaiterDashboardClient({ orders, settings }: { orders: an
   const activeOrders = orders.filter(o => ['PENDING', 'PREPARING', 'SERVED'].includes(o.status));
   
   // Group Unpaid for Billing
-  const unpaidOrders = orders.filter(o => o.paymentStatus !== 'PAID' && o.customerPhone);
+  const unpaidOrders = orders.filter(o => o.paymentStatus !== 'PAID' && o.customerName);
   const billingGroups: Record<string, typeof orders> = {};
   unpaidOrders.forEach(o => {
-    const key = `${o.customerPhone}`;
+    const key = `${o.customerName}`;
     if (!billingGroups[key]) billingGroups[key] = [];
     billingGroups[key].push(o);
   });
@@ -76,7 +76,7 @@ export default function WaiterDashboardClient({ orders, settings }: { orders: an
                 <div>
                   <h3 className="text-3xl font-black tabular-nums">T-{order.table.tableNumber}</h3>
                   <p className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-wider flex items-center gap-1">
-                    <Phone className="w-3 h-3" /> {order.customerPhone || 'Walk-in'}
+                    <User className="w-3 h-3" /> {order.customerName || 'Walk-in'}
                   </p>
                 </div>
                 <div className="text-right">
@@ -90,7 +90,7 @@ export default function WaiterDashboardClient({ orders, settings }: { orders: an
                   <div className="text-[10px] text-slate-400 mt-1">
                     {new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </div>
-                  <Link href={`/waiter/create-order?tableId=${order.tableId}&mobile=${order.customerPhone}`} className="mt-2 inline-flex items-center gap-1 text-[10px] uppercase font-black tracking-wider bg-primary/10 text-primary px-2 py-1 rounded-full hover:bg-primary/20 transition">
+                  <Link href={`/waiter/create-order?tableId=${order.tableId}&mobile=${order.customerName || ''}`} className="mt-2 inline-flex items-center gap-1 text-[10px] uppercase font-black tracking-wider bg-primary/10 text-primary px-2 py-1 rounded-full hover:bg-primary/20 transition">
                     <PlusCircle className="w-3 h-3"/> Add Items
                   </Link>
                 </div>
@@ -137,22 +137,22 @@ export default function WaiterDashboardClient({ orders, settings }: { orders: an
             </div>
             <div className="p-3 space-y-2">
               {Object.keys(billingGroups).length === 0 && <p className="text-slate-500 text-sm p-4 text-center">No pending bills on the floor.</p>}
-              {Object.keys(billingGroups).map(phone => {
-                const customerOrders = billingGroups[phone];
+              {Object.keys(billingGroups).map(name => {
+                const customerOrders = billingGroups[name];
                 const tables = Array.from(new Set(customerOrders.map(o => o.table?.tableNumber))).join(', ');
                 const total = customerOrders.reduce((sum, o) => sum + o.totalAmount, 0);
                 
                 return (
                   <button 
-                    key={phone} 
-                    onClick={() => setSelectedMobile(phone)}
-                    className={`w-full text-left p-3 rounded-xl transition-all border ${selectedMobile === phone ? 'bg-primary/5 border-primary shadow-sm' : 'border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50'}`}
+                    key={name} 
+                    onClick={() => setSelectedName(name)}
+                    className={`w-full text-left p-3 rounded-xl transition-all border ${selectedName === name ? 'bg-primary/5 border-primary shadow-sm' : 'border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50'}`}
                   >
                     <div className="flex justify-between items-center mb-1">
                       <div className="font-bold text-slate-800 dark:text-slate-200">Table {tables}</div>
                       <div className="font-black text-primary text-sm">₹{total.toFixed(0)}</div>
                     </div>
-                    <div className="text-xs text-slate-500 flex items-center gap-1"><Phone className="w-3 h-3" /> {phone}</div>
+                    <div className="text-xs text-slate-500 flex items-center gap-1"><User className="w-3 h-3" /> {name}</div>
                   </button>
                 );
               })}
@@ -160,7 +160,7 @@ export default function WaiterDashboardClient({ orders, settings }: { orders: an
           </div>
 
           <div className="lg:col-span-2">
-            {!selectedMobile ? (
+            {!selectedName ? (
               <div className="h-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl flex flex-col items-center justify-center p-12 text-slate-400 opacity-80 min-h-[400px]">
                 <Receipt className="w-16 h-16 mb-4 opacity-50" />
                 <p className="font-medium text-lg">Select a bill from the left</p>
@@ -171,12 +171,12 @@ export default function WaiterDashboardClient({ orders, settings }: { orders: an
                 <div className="flex justify-between items-end mb-6 pb-4 border-b border-slate-100 dark:border-slate-800">
                   <div>
                     <h2 className="text-2xl font-black leading-none mb-2">Final Bill</h2>
-                    <p className="text-slate-500 text-sm font-semibold flex items-center gap-1"><Phone className="w-4 h-4"/> +91 {selectedMobile}</p>
+                    <p className="text-slate-500 text-sm font-semibold flex items-center gap-1"><User className="w-4 h-4"/> {selectedName}</p>
                   </div>
                 </div>
 
                 <div className="space-y-3 mb-8 max-h-[300px] overflow-y-auto pr-2 no-scrollbar">
-                  {billingGroups[selectedMobile].map(order => (
+                  {billingGroups[selectedName].map(order => (
                     <div key={order.id} className="p-3 bg-slate-50 dark:bg-slate-900 rounded-lg text-sm border border-slate-100 dark:border-slate-800">
                       <div className="flex justify-between font-bold mb-2 pb-2 border-b border-slate-200 dark:border-slate-700">
                         <span className="text-slate-500 text-xs uppercase tracking-wider">Order #{order.id.slice(-6).toUpperCase()}</span>
@@ -195,9 +195,22 @@ export default function WaiterDashboardClient({ orders, settings }: { orders: an
 
                 {/* Submitting Payment via Admin UPI */}
                 {(() => {
-                  const netTotal = billingGroups[selectedMobile].reduce((sum, o) => sum + o.totalAmount, 0);
+                  const netTotal = billingGroups[selectedName].reduce((sum, o) => sum + o.totalAmount, 0);
                   const upiUrl = `upi://pay?pa=${settings.adminUpiId}&pn=${encodeURIComponent(settings.hotelName)}&am=${netTotal.toFixed(2)}&cu=INR`;
+                  const allCompleted = billingGroups[selectedName].every(o => o.status === 'COMPLETED');
                   
+                  if (!allCompleted) {
+                    return (
+                      <div className="bg-amber-50 dark:bg-amber-900/20 border-2 border-dashed border-amber-200 dark:border-amber-800/50 p-6 rounded-2xl flex flex-col items-center justify-center text-center mt-6">
+                        <AlertCircle className="w-12 h-12 text-amber-500 mb-3" />
+                        <h3 className="font-bold text-amber-800 dark:text-amber-500 text-lg">Bill Pending</h3>
+                        <p className="text-amber-700 dark:text-amber-400 text-sm font-medium mt-1">
+                          Some orders for this table are still being prepared or served. You can generate the final bill once all items are marked as COMPLETED.
+                        </p>
+                      </div>
+                    );
+                  }
+
                   return (
                     <div className="bg-gradient-to-br from-emerald-500 to-emerald-700 p-1 rounded-2xl shadow-xl overflow-hidden mt-6">
                       <div className="bg-emerald-50 dark:bg-slate-900 rounded-xl p-6 flex flex-col md:flex-row items-center gap-8 justify-between">
@@ -208,7 +221,7 @@ export default function WaiterDashboardClient({ orders, settings }: { orders: an
                           <p className="text-sm font-medium text-slate-500 mb-6">Scan QR with PhonePe, GPay, or Paytm</p>
                           
                           <button 
-                            onClick={() => handleMarkPaid(billingGroups[selectedMobile].map(o => o.id))}
+                            onClick={() => handleMarkPaid(billingGroups[selectedName].map(o => o.id))}
                             className="w-full py-4 bg-emerald-500 text-white font-bold rounded-xl shadow-lg hover:bg-emerald-600 active:scale-95 transition flex items-center justify-center gap-2"
                           >
                             <CheckCircle className="w-5 h-5" /> Confirm Payment Received

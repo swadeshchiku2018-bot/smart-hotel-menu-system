@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { getHistoryOrders } from '@/actions/orders';
-import { Search, Calendar, Phone, Utensils } from 'lucide-react';
+import { Search, Calendar, User, Utensils } from 'lucide-react';
 
 export default function HistoryClient() {
   const [dateStr, setDateStr] = useState<string>(() => {
@@ -85,9 +85,9 @@ export default function HistoryClient() {
                     {new Date(order.createdAt).toLocaleTimeString()} · Order #{order.id.slice(-6).toUpperCase()}
                   </div>
                 </div>
-                {order.customerPhone && (
+                {order.customerName && (
                   <div className="flex items-center gap-1 text-xs font-bold text-slate-500 mb-3 bg-slate-200/50 dark:bg-slate-800/50 px-2 py-1 rounded-md">
-                     <Phone className="w-3 h-3" /> {order.customerPhone}
+                     <User className="w-3 h-3" /> {order.customerName}
                   </div>
                 )}
                 <div className="text-sm font-semibold mt-auto pt-4 border-t border-slate-200 dark:border-slate-700 w-full">

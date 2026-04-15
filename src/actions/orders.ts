@@ -46,14 +46,14 @@ export async function updateOrderStatus(orderId: string, status: string) {
   revalidatePath('/admin');
 }
 
-export async function createOrder(tableId: string, items: {dishId: string, quantity: number, price: number, portion?: string}[], customerPhone?: string, chefInstruction?: string) {
+export async function createOrder(tableId: string, items: {dishId: string, quantity: number, price: number, portion?: string}[], customerName?: string, chefInstruction?: string) {
   try {
     const totalAmount = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     
     const order = await prisma.order.create({
       data: {
         tableId,
-        customerPhone,
+        customerName,
         chefInstruction,
         totalAmount,
         items: {
