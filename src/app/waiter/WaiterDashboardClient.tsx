@@ -10,28 +10,46 @@ import Link from 'next/link';
 export default function WaiterDashboardClient({ orders, settings }: { orders: any[], settings: any }) {
   const [activeTab, setActiveTab] = useState<'ORDERS' | 'BILLS'>('ORDERS');
   const [selectedName, setSelectedName] = useState<string | null>(null);
-  const [localOrders, setLocalOrders] = useState(orders);
+  const [localOrders, setLocalOrders] = useState(orders || []);
   const router = useRouter();
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
-  const prevOrderIds = useRef<Set<string>>(new Set(orders.map(o => o.id)));
+  const prevOrderIds = useRef<Set<string>>(new Set((orders || []).map(o => o.id)));
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && 'Notification' in window) {
-      if (Notification.permission === 'granted') {
-        setNotificationsEnabled(true);
+    try {
+      if (typeof window !== 'undefined' && 'Notification' in window) {
+        if (Notification.permission === 'granted') {
+          setNotificationsEnabled(true);
+        }
       }
+    } catch (e) {
+      console.warn("Notifications check failed:", e);
     }
   }, []);
 
   const enableNotifications = async () => {
-    if (typeof window !== 'undefined' && 'Notification' in window) {
-      const perm = await Notification.requestPermission();
-      if (perm === 'granted') {
-        setNotificationsEnabled(true);
-        alert("Alerts Enabled! You will now receive an audio chime and visual browser notification for new orders.");
+    try {
+      if (typeof window !== 'undefined' && 'Notification' in window) {
+        let perm;
+        try {
+          perm = await Notification.requestPermission();
+        } catch (e) {
+          // Old Safari callback fallback
+          Notification.requestPermission((p) => { perm = p; });
+        }
+        if (perm === 'granted') {
+          setNotificationsEnabled(true);
+          alert("Alerts Enabled! You will now receive an audio chime and visual browser notification for new orders.");
+        } else {
+          alert("Action denied by your browser settings. You may need to reset site permissions in the URL bar.");
+        }
       } else {
-        alert("Action denied by your browser settings. You may need to reset site permissions in the URL bar.");
+        alert("System push notifications are not supported on this browser (common on iOS). Audio alerts will still trigger.");
+        setNotificationsEnabled(true); // Fallback to just playing audio chime
       }
+    } catch (e) {
+      alert("Error enabling notifications. Audio chime enabled.");
+      setNotificationsEnabled(true);
     }
   };
 
@@ -56,10 +74,11 @@ export default function WaiterDashboardClient({ orders, settings }: { orders: an
 
   // Sync server prop state natively when polling happens and trigger notifications
   useEffect(() => {
-    setLocalOrders(orders);
+    const freshOrders = orders || [];
+    setLocalOrders(freshOrders);
 
-    const currentIds = new Set(orders.map(o => o.id));
-    const newOrders = orders.filter(o => !prevOrderIds.current.has(o.id));
+    const currentIds = new Set(freshOrders.map(o => o.id));
+    const newOrders = freshOrders.filter(o => !prevOrderIds.current.has(o.id));
 
     if (newOrders.length > 0) {
       newOrders.forEach(no => {
@@ -70,17 +89,21 @@ export default function WaiterDashboardClient({ orders, settings }: { orders: an
             setTimeout(() => { document.title = 'Smart Hotel Menu'; }, 3000);
           }
 
-          if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
-             playChime();
-             new Notification(`New Order - Table ${no.table?.tableNumber}`, {
-               body: `${no.customerName || 'Walk-in'} just placed a new order.`,
-             });
+          if (notificationsEnabled) {
+            playChime();
+            try {
+              if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+                 new Notification(`New Order - Table ${no.table?.tableNumber}`, {
+                   body: `${no.customerName || 'Walk-in'} just placed a new order.`,
+                 });
+              }
+            } catch(e) {}
           }
         }
       });
     }
     prevOrderIds.current = currentIds;
-  }, [orders]);
+  }, [orders, notificationsEnabled]);
 
   // Auto-refresh orders every 10 seconds for real-time sync
   useEffect(() => {
