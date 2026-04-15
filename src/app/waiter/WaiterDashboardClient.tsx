@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { updateOrderStatus } from '@/actions/orders';
-import { User, Phone, CheckCircle, Receipt, Utensils, AlertCircle, PlusCircle } from 'lucide-react';
+import { User, Phone, CheckCircle, Receipt, Utensils, AlertCircle, PlusCircle, Bell, BellOff } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import Link from 'next/link';
 
@@ -12,14 +12,47 @@ export default function WaiterDashboardClient({ orders, settings }: { orders: an
   const [selectedName, setSelectedName] = useState<string | null>(null);
   const [localOrders, setLocalOrders] = useState(orders);
   const router = useRouter();
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const prevOrderIds = useRef<Set<string>>(new Set(orders.map(o => o.id)));
 
-  // Request Notification permission on mount
   useEffect(() => {
-    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default') {
-      Notification.requestPermission();
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      if (Notification.permission === 'granted') {
+        setNotificationsEnabled(true);
+      }
     }
   }, []);
+
+  const enableNotifications = async () => {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      const perm = await Notification.requestPermission();
+      if (perm === 'granted') {
+        setNotificationsEnabled(true);
+        alert("Alerts Enabled! You will now receive an audio chime and visual browser notification for new orders.");
+      } else {
+        alert("Action denied by your browser settings. You may need to reset site permissions in the URL bar.");
+      }
+    }
+  };
+
+  const playChime = () => {
+    try {
+      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // High pitch ringing bell-like
+      
+      gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+      gainNode.gain.linearRampToValueAtTime(0.1, audioCtx.currentTime + 0.1);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
+      
+      oscillator.start();
+      oscillator.stop(audioCtx.currentTime + 0.5);
+    } catch(e) {}
+  };
 
   // Sync server prop state natively when polling happens and trigger notifications
   useEffect(() => {
@@ -29,15 +62,22 @@ export default function WaiterDashboardClient({ orders, settings }: { orders: an
     const newOrders = orders.filter(o => !prevOrderIds.current.has(o.id));
 
     if (newOrders.length > 0) {
-      if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
-        newOrders.forEach(no => {
-          if (no.status === 'PENDING') {
-            new Notification(`New Order - Table ${no.table?.tableNumber}`, {
-              body: `${no.customerName || 'Walk-in'} just placed a new order.`,
-            });
+      newOrders.forEach(no => {
+        if (no.status === 'PENDING') {
+          // Temporarily alter document title
+          if (typeof document !== 'undefined') {
+            document.title = '(1) New Order! - Smart Hotel Menu';
+            setTimeout(() => { document.title = 'Smart Hotel Menu'; }, 3000);
           }
-        });
-      }
+
+          if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+             playChime();
+             new Notification(`New Order - Table ${no.table?.tableNumber}`, {
+               body: `${no.customerName || 'Walk-in'} just placed a new order.`,
+             });
+          }
+        }
+      });
     }
     prevOrderIds.current = currentIds;
   }, [orders]);
@@ -79,19 +119,29 @@ export default function WaiterDashboardClient({ orders, settings }: { orders: an
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
-      {/* Tabs */}
-      <div className="flex bg-slate-100 dark:bg-slate-900 p-1.5 rounded-xl max-w-sm mx-auto shadow-sm">
+      {/* Header and Tabs */}
+      <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+        <div className="flex bg-slate-100 dark:bg-slate-900 p-1.5 rounded-xl w-full md:w-auto shadow-sm">
+          <button 
+            onClick={() => setActiveTab('ORDERS')}
+            className={`px-8 py-2 font-bold text-sm rounded-lg transition-all ${activeTab === 'ORDERS' ? 'bg-white dark:bg-slate-800 text-primary shadow-sm' : 'text-slate-500'}`}
+          >
+            Live Orders
+          </button>
+          <button 
+            onClick={() => setActiveTab('BILLS')}
+            className={`px-8 py-2 font-bold text-sm rounded-lg transition-all ${activeTab === 'BILLS' ? 'bg-white dark:bg-slate-800 text-primary shadow-sm' : 'text-slate-500'}`}
+          >
+            Process Bills
+          </button>
+        </div>
+        
         <button 
-          onClick={() => setActiveTab('ORDERS')}
-          className={`flex-1 py-2 font-bold text-sm rounded-lg transition-all ${activeTab === 'ORDERS' ? 'bg-white dark:bg-slate-800 text-primary shadow-sm' : 'text-slate-500'}`}
+          onClick={enableNotifications}
+          className={`px-4 py-2 rounded-xl font-bold text-xs flex items-center gap-2 border transition-all ${notificationsEnabled ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 border-emerald-200 dark:border-emerald-800' : 'bg-white dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700 hover:text-primary hover:border-primary/50 shadow-sm'}`}
         >
-          Live Orders
-        </button>
-        <button 
-          onClick={() => setActiveTab('BILLS')}
-          className={`flex-1 py-2 font-bold text-sm rounded-lg transition-all ${activeTab === 'BILLS' ? 'bg-white dark:bg-slate-800 text-primary shadow-sm' : 'text-slate-500'}`}
-        >
-          Process Bills
+          {notificationsEnabled ? <Bell className="w-4 h-4" /> : <BellOff className="w-4 h-4" />}
+          {notificationsEnabled ? 'Alerts Authorized' : 'Enable Audio & Alerts'}
         </button>
       </div>
 
