@@ -10,7 +10,13 @@ import Link from 'next/link';
 export default function WaiterDashboardClient({ orders, settings }: { orders: any[], settings: any }) {
   const [activeTab, setActiveTab] = useState<'ORDERS' | 'BILLS'>('ORDERS');
   const [selectedName, setSelectedName] = useState<string | null>(null);
+  const [localOrders, setLocalOrders] = useState(orders);
   const router = useRouter();
+
+  // Sync server prop state natively when polling happens
+  useEffect(() => {
+    setLocalOrders(orders);
+  }, [orders]);
 
   // Auto-refresh orders every 10 seconds for real-time sync
   useEffect(() => {
@@ -21,11 +27,11 @@ export default function WaiterDashboardClient({ orders, settings }: { orders: an
   }, [router]);
 
   // Filter Orders for Floor
-  const activeOrders = orders.filter(o => ['PENDING', 'PREPARING', 'SERVED'].includes(o.status));
+  const activeOrders = localOrders.filter(o => ['PENDING', 'PREPARING', 'SERVED'].includes(o.status));
   
   // Group Unpaid for Billing
-  const unpaidOrders = orders.filter(o => o.paymentStatus !== 'PAID' && o.customerName);
-  const billingGroups: Record<string, typeof orders> = {};
+  const unpaidOrders = localOrders.filter(o => o.paymentStatus !== 'PAID' && o.customerName);
+  const billingGroups: Record<string, typeof localOrders> = {};
   unpaidOrders.forEach(o => {
     const key = `${o.customerName}`;
     if (!billingGroups[key]) billingGroups[key] = [];
@@ -33,7 +39,11 @@ export default function WaiterDashboardClient({ orders, settings }: { orders: an
   });
 
   const handleStatusChange = async (id: string, status: string) => {
+    // Instant UI update (optimistic)
+    setLocalOrders(prev => prev.map(o => o.id === id ? { ...o, status } : o));
+    // Server execution
     await updateOrderStatus(id, status);
+    router.refresh();
   };
 
   const handleMarkPaid = async (orderIds: string[]) => {
