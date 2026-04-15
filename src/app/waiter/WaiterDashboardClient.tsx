@@ -28,7 +28,7 @@ export default function WaiterDashboardClient({ orders, settings }: { orders: an
     const currentIds = new Set(orders.map(o => o.id));
     const newOrders = orders.filter(o => !prevOrderIds.current.has(o.id));
 
-    if (newOrders.length > 0 && typeof document !== 'undefined' && document.visibilityState === 'hidden') {
+    if (newOrders.length > 0) {
       if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
         newOrders.forEach(no => {
           if (no.status === 'PENDING') {
